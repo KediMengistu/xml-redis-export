@@ -1,0 +1,29 @@
+name: xml-redis-export
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    # No "ports:" on purpose: Redis is reachable only from the app over the
+    # private compose network, never from the host or the internet.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      target: app
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  tests:
+    build:
+      context: .
+      target: test
+    profiles: ["test"]  # only runs when asked for (./test.sh)
